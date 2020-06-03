@@ -1,0 +1,14 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cpro1-config-map
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: configmap
+type: Opaque
+data:
+  service.url.commission: FROM_KUBERNETES_SERVICE
+  service.url.interest: FROM_KUBERNETES_SERVICE
+  service.url.payment: FROM_KUBERNETES_SERVICE

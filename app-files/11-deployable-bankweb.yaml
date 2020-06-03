@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpro1-bankweb
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: bankweb     
+spec:
+  selector:
+    matchLabels:
+      app: cpro1-application
+      subname: bankweb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cpro1-application
+        subname: bankweb
+    spec:
+      containers:
+        - name: container-web
+          image: "gandigit/cpro-bankweb:v1"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 9030
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+          - name: service.url.commission
+            valueFrom:
+              configMapKeyRef:
+                name: cpro1-config-map
+                key: service.url.commission
+          - name: service.url.interest
+            valueFrom:
+              configMapKeyRef:
+                name: cpro1-config-map
+                key: service.url.interest
+          - name: service.url.payment
+            valueFrom:
+              configMapKeyRef:
+                name: cpro1-config-map
+                key: service.url.payment
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpro1-bankweb
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: bankweb
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9090'
+    prometheus.io/path: '/actuator/prometheus'
+    mcm.ibm.com/service-discovery: "{}"
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: 9030
+  selector:
+    app: cpro1-application
+    subname: bankweb
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cpro1-bankweb
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: bankweb
+spec:
+  path: /
+  to:
+    kind: Service
+    name: cpro1-bankweb
+    weight: 100
+  port:
+    targetPort: my-http

@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpro1-commission
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: commission
+spec:
+  selector:
+    matchLabels:
+      app: cpro1-application
+      subname: commission
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cpro1-application
+        subname: commission          
+    spec:
+      containers:
+        - name: container-commission
+          image: "gandigit/cpro-commission:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 9031
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpro1-commission
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: commission
+  annotations:
+    mcm.ibm.com/service-discovery: "{}"            
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: 9031
+  selector:
+    app: cpro1-application
+    subname: commission
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cpro1-commission
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: commission
+spec:
+  path: /
+  to:
+    kind: Service
+    name: cpro1-commission
+    weight: 100
+  port:
+    targetPort: my-http

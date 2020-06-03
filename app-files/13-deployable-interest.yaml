@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpro1-interest
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: interest
+spec:
+  selector:
+    matchLabels:
+      app: cpro1-application
+      subname: interest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: cpro1-application
+        subname: interest          
+    spec:
+      containers:
+        - name: container-interest
+          image: "gandigit/cpro-interest:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 9032
+              protocol: TCP
+            - name: https
+              containerPort: 8082
+          env:
+          - name: GET_HOSTS_FROM
+            value: dns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpro1-interest
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: interest
+  annotations:
+    mcm.ibm.com/service-discovery: "{}"            
+spec:
+  type: ClusterIP
+  ports:
+    - name: my-http
+      port: 9090
+      targetPort: 9032
+  selector:
+    app: cpro1-application
+    subname: interest
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: cpro1-interest
+  namespace: cpro1-app-ns
+  labels:
+    app: cpro1-application
+    subname: interest
+spec:
+  path: /
+  to:
+    kind: Service
+    name: cpro1-interest
+    weight: 100
+  port:
+    targetPort: my-http
